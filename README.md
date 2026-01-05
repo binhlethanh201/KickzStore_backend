@@ -1,141 +1,140 @@
-## Node.js Express Framework Learning Project — KickzStore Backend
+# 👟 KickzStore
 
-This repository contains a focused Node.js Express backend for KickzStore. It demonstrates server-side JavaScript with Express.js, MongoDB integration via Mongoose, modular routing, and clean controller/model organization. It serves as a learning-friendly codebase for building RESTful APIs with Node.js and Express.
+**KickzStore** is a modern full-stack e-commerce application specializing in footwear retail.  
+This repository contains the **backend REST API** that powers the KickzStore client.  
+Built with **Node.js**, **Express.js**, and **MongoDB (Mongoose)**, it provides secure user authentication, product catalog management, cart and wishlist handling, order processing, and admin management capabilities.
 
-### Prerequisites
 
-- Node.js (version 14 or higher) and npm installed on your system
-- MongoDB installed and running locally (or MongoDB Atlas account)
-- (Optional) A code editor like VS Code for easier code navigation
-- Basic understanding of JavaScript, HTTP, and REST APIs
+## Prerequisites
 
-### Installation
+- Node.js (version 16 or higher) and npm installed on your system
+- A running MongoDB instance (local or cloud, e.g., MongoDB Atlas)
+- (Optional) API testing tool like Postman, Insomnia, or Hoppscotch
+- (Optional) A code editor like VS Code, Sublime Text, or Atom for easier code navigation
+- Basic understanding of JavaScript and Node.js
+- Knowledge of REST APIs and HTTP methods
 
-1. Clone the repository:
-```sh
-git clone <repository-url>
-cd kickzstore_backend
-```
 
-2. Install dependencies:
-```sh
-npm install
-```
+## Installation
 
-3. Set up MongoDB and environment variables:
-Create a `.env` file in the project root with:
-```env
-MONGO_URI=mongodb://localhost:27017
-DBNAME=kickzstore_dev
-# Optional: override default 9999
-PORT=9999
-```
+1. **Clone the repository** (if not already downloaded):
 
-### How to Run
+   ```sh
+   git clone <repository-url>
+   cd KickzStore_backend
+   ```
 
-#### Development Mode
+2. **Install backend dependencies**:
 
-Start the application (uses nodemon):
-```sh
-npm start
-```
-The server starts at `http://localhost:9999` by default (or `http://localhost:$PORT` if `PORT` is set). All routes are mounted under `/api`.
+   ```sh
+   npm install
+   ```
 
-#### Production Mode
+3. **Configure environment variables**:
 
-Run the server without nodemon:
-```sh
-node server.js
-```
+   Create a `.env` file in the project root with values suitable for your environment, for example:
 
-### Project Structure
+   ```sh
+   MONGODB_URI=mongodb://localhost:27017/kickzstore
+   JWT_SECRET=your_jwt_secret_here
+   PORT=9999
+   ```
 
-```
-kickzstore_backend/
-├── config/
-│   └── db.js
-├── controllers/
-├── models/
-├── routes/
-├── server.js
-├── package.json
-└── README.md
-```
 
-- `config/db.js`: MongoDB connection setup using `MONGO_URI` and `DBNAME`
-- `server.js`: Express app initialization, middleware, route mounting at `/api`, and server start
-- `controllers/`: Request handling and business logic per resource
-- `models/`: Mongoose schemas and models
-- `routes/`: Express routers for each resource, composed in `routes/index.js`
+## How to Run
 
-### Features
+1. **Start the backend server**:
 
-- **Express.js Framework**: Modern Node.js web application framework
-- **Modular Architecture**: Clear separation of routes, controllers, and models
-- **MongoDB Integration**: NoSQL database with Mongoose ODM
-- **CRUD Ready**: Controllers and routes scaffolded for typical CRUD operations
-- **RESTful API Design**: Proper HTTP method usage and route structure
-- **Environment Config**: `.env` driven configuration (URI, DB name, port)
-- **Development Tools**: Nodemon for automatic server restart
-- **Logging**: Morgan dependency available for HTTP request logging
-- **CORS/JSON**: JSON parsing and CORS support for API consumption
+   ```sh
+   node server.js
+   ```
 
-### Technologies Used
+   The API will start on the port defined in your `.env` file (e.g., `http://localhost:5000`).
+
+2. **(Optional) Use nodemon for development**:
+
+   If you prefer automatic restarts on file changes, install nodemon globally or as a dev dependency and run:
+
+   ```sh
+   npx nodemon server.js
+   ```
+
+3. **Connect the mobile client**:
+
+   Point your KickzStore mobile app (or any frontend client) to the backend base URL, for example:
+
+   ```text
+   http://<your-local-ip>:5000
+   ```
+
+
+## Technologies
+
+### Backend
 
 - **Node.js**
 - **Express.js 5.1.0**
-- **MongoDB**
-- **Mongoose 8.x**
-- **Morgan 1.10.x**
-- **Body-Parser 2.x**
-- **CORS 2.8.x**
-- **Dotenv 17.x**
-- **Nodemon 3.x**
+- **MongoDB with Mongoose 8.19.1**
+- **CORS 2.8.5**
+- **bcrypt 6.0.0**
+- **dotenv 17.2.3**
+- **JSON Web Tokens (JWT) for authentication**
 
-### API Endpoints
+### Development Tools
 
-All endpoints are prefixed with `/api`.
+- **npm** as the package manager
+- **Git** for version control
+- (Optional) **nodemon** for local development
 
-- **Carts**
-  - `GET /api/carts` — List all carts
-- **Products**
-  - `GET /api/products` — List all products
-- **Users**
-  - `GET /api/users` — List all users
-- **Wishlists**
-  - `GET /api/wishlists` — List all wishlist entries
 
-Extend controllers and routes to add POST/PUT/PATCH/DELETE as needed.
+## Troubleshooting
 
-### Development Workflow
+- **Database Connection**:  
+  Ensure `MONGODB_URI` in `.env` is correct and your MongoDB instance is running and accessible.
 
-1. Ensure MongoDB is running and `.env` variables are set
-2. Start dev server with `npm start`
-3. Use an API client (Postman/Insomnia) to test endpoints at `http://localhost:9999/api/...`
+- **Port Conflicts**:  
+  If the configured `PORT` is already in use, change it in your `.env` file.
 
-### Troubleshooting
+- **CORS Issues**:  
+  Verify allowed origins in the CORS configuration if your frontend cannot access the API.
 
-- **Database Connection**: Verify `MONGO_URI` and `DBNAME` in `.env`, ensure MongoDB is running
-- **Port Conflicts**: Set a different `PORT` in `.env`
-- **Dependencies**: Run `npm install` if modules are missing
-- **CORS**: Configure `cors` if calling from a different origin
-- **Console Errors**: Check terminal output for stack traces and connection logs
+- **Authentication Errors**:  
+  Confirm `JWT_SECRET` is set correctly and tokens are sent in the `Authorization: Bearer <token>` header.
 
-### Contributing
+- **Environment Variables Not Loaded**:  
+  Make sure the `.env` file exists in the project root and that `dotenv` is required and configured early in the app.
 
-This is a learning project. Feel free to:
-- Add new endpoints and business logic
-- Improve validations and error handling
-- Enhance documentation
-- Open issues and pull requests
+- **Dependency Problems**:  
+  Delete `node_modules` and `package-lock.json`, then run `npm install` again.
 
-### Learn More
 
+## Contributing
+
+This is a learning project designed for educational purposes. Feel free to:
+
+- Modify endpoints to experiment with different API designs
+- Add new features and business logic
+- Improve documentation and inline comments
+- Share your learning experiences
+- Report bugs and suggest improvements
+
+
+## Learn More
+
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Navigation Documentation](https://reactnavigation.org/)
 - [Express.js Documentation](https://expressjs.com/)
 - [MongoDB Documentation](https://www.mongodb.com/docs/)
 - [Mongoose Documentation](https://mongoosejs.com/docs/)
-- [Node.js Documentation](https://nodejs.org/en/docs/)
+- [JSON Web Tokens Documentation](https://jwt.io/introduction)
 
-### License
 
-This project is licensed under the ISC License — see the LICENSE file for details.
+For questions or contributions, please open an issue or pull request on the GitHub repository.
+
+
+## License
+
+This project is licensed under the ISC License - see the LICENSE file for details.
+
+
