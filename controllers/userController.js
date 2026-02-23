@@ -52,6 +52,9 @@ class UserController {
         user.phone = phone;
       }
       if (address && typeof address === "object") {
+        if (!user.address) {
+          user.address = {};
+        }
         user.address.street = address.street || user.address.street;
         user.address.city = address.city || user.address.city;
         user.address.district = address.district || user.address.district;
