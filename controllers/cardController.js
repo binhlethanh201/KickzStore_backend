@@ -7,14 +7,17 @@ class CardController {
       const cards = await Card.find({ userId }).sort({ createdAt: -1 });
       res.status(200).json(cards);
     } catch (err) {
-      res.status(500).json({ message: "Error fetching cards", error: err.message });
+      res
+        .status(500)
+        .json({ message: "Error fetching cards", error: err.message });
     }
   }
 
   async addCard(req, res) {
     try {
       const userId = req.user.id;
-      const { cardName, cardNumber, cardHolderName, expiryDate, cvv } = req.body;
+      const { cardName, cardNumber, cardHolderName, expiryDate, cvv } =
+        req.body;
 
       const existingCard = await Card.findOne({ cardNumber });
       if (existingCard) {
@@ -32,9 +35,13 @@ class CardController {
       });
 
       await newCard.save();
-      res.status(201).json({ message: "Card added successfully", card: newCard });
+      res
+        .status(201)
+        .json({ message: "Card added successfully", card: newCard });
     } catch (err) {
-      res.status(500).json({ message: "Error adding card", error: err.message });
+      res
+        .status(500)
+        .json({ message: "Error adding card", error: err.message });
     }
   }
 
@@ -45,11 +52,15 @@ class CardController {
       const deletedCard = await Card.findOneAndDelete({ _id: cardId, userId });
 
       if (!deletedCard) {
-        return res.status(404).json({ message: "Card not found or unauthorized" });
+        return res
+          .status(404)
+          .json({ message: "Card not found or unauthorized" });
       }
       res.status(200).json({ message: "Card deleted successfully" });
     } catch (err) {
-      res.status(500).json({ message: "Error deleting card", error: err.message });
+      res
+        .status(500)
+        .json({ message: "Error deleting card", error: err.message });
     }
   }
 }

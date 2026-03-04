@@ -8,7 +8,7 @@ const CartItemSchema = new schema(
     size: { type: Number },
     color: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const CartSchema = new schema(
@@ -16,7 +16,7 @@ const CartSchema = new schema(
     userId: { type: schema.Types.ObjectId, ref: "User", required: true },
     items: [CartItemSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Cart", CartSchema, "carts");

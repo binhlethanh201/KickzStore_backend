@@ -89,27 +89,29 @@ class ProductController {
 
   async getByPrice(req, res, next) {
     try {
-      const products = await Product.find({})
-        .sort({ price: -1 })
-        .limit(10);
+      const products = await Product.find({}).sort({ price: -1 }).limit(10);
       res.status(200).json(products);
     } catch (err) {
       res
         .status(500)
-        .json({ message: "Error fetching products by price", error: err.message });
+        .json({
+          message: "Error fetching products by price",
+          error: err.message,
+        });
     }
   }
 
   async getByQuantity(req, res, next) {
     try {
-      const products = await Product.find({})
-        .sort({ quantity: -1 })
-        .limit(10);
+      const products = await Product.find({}).sort({ quantity: -1 }).limit(10);
       res.status(200).json(products);
     } catch (err) {
       res
         .status(500)
-        .json({ message: "Error fetching products by quantity", error: err.message });
+        .json({
+          message: "Error fetching products by quantity",
+          error: err.message,
+        });
     }
   }
 
@@ -118,26 +120,29 @@ class ProductController {
       const products = await Product.aggregate([
         {
           $addFields: {
-            colorCount: { $size: "$color" }
-          }
+            colorCount: { $size: "$color" },
+          },
         },
         {
-          $sort: { colorCount: -1 }
+          $sort: { colorCount: -1 },
         },
         {
-          $limit: 10
+          $limit: 10,
         },
         {
           $project: {
-            colorCount: 0
-          }
-        }
+            colorCount: 0,
+          },
+        },
       ]);
       res.status(200).json(products);
     } catch (err) {
       res
         .status(500)
-        .json({ message: "Error fetching products by color count", error: err.message });
+        .json({
+          message: "Error fetching products by color count",
+          error: err.message,
+        });
     }
   }
 }

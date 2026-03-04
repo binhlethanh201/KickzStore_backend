@@ -8,7 +8,7 @@ const AddressSchema = new schema(
     district: { type: String },
     country: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const UserSchema = new schema(
@@ -29,7 +29,7 @@ const UserSchema = new schema(
     password: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("User", UserSchema, "users");

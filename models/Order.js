@@ -24,7 +24,7 @@ const OrderSchema = new schema(
     address: { type: String, required: true },
     paymentMethod: {
       type: String,
-      enum: ["credit_card", "paypal", "cod"],
+      enum: ["credit_card", "paypal", "cod", "vnpay"],
       default: "cod",
     },
     cardId: { type: schema.Types.ObjectId, ref: "Card" },
@@ -33,11 +33,18 @@ const OrderSchema = new schema(
     totalPrice: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "paid", "processing", "shipped", "completed", "cancelled"],
+      enum: [
+        "pending",
+        "paid",
+        "processing",
+        "shipped",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Order", OrderSchema, "orders");

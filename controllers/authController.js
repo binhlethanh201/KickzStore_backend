@@ -86,9 +86,9 @@ class AuthController {
       const payload = {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
       };
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "2h", });
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "2h" });
       res.status(200).json({ message: "Login successful", token });
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });

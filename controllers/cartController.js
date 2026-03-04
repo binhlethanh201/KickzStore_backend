@@ -20,7 +20,7 @@ class CartController {
 
       const cart = await Cart.findOne({ userId }).populate(
         "items.productId",
-        "name price img brand"
+        "name price img brand",
       );
 
       if (!cart) {
@@ -58,7 +58,7 @@ class CartController {
         (item) =>
           item.productId.toString() === productId &&
           item.size === size &&
-          item.color === color
+          item.color === color,
       );
 
       if (existingItem) {
@@ -90,7 +90,7 @@ class CartController {
         (item) =>
           item.productId.toString() === productId &&
           item.size === size &&
-          item.color === color
+          item.color === color,
       );
 
       if (itemIndex === -1) {
@@ -116,14 +116,12 @@ class CartController {
       const userId = req.user.id;
       const { productId } = req.params;
       let { size, color } = req.body;
-  
-      // ép kiểu an toàn
       if (size !== undefined) size = Number(size);
       if (color !== undefined) color = String(color);
-  
+
       const cart = await Cart.findOne({ userId });
       if (!cart) return res.status(404).json({ message: "Cart not found" });
-  
+
       const initialLength = cart.items.length;
       cart.items = cart.items.filter(
         (item) =>
@@ -131,13 +129,13 @@ class CartController {
             item.productId.toString() === productId &&
             item.size === size &&
             item.color === color
-          )
+          ),
       );
-  
+
       if (cart.items.length === initialLength) {
         return res.status(404).json({ message: "Item not found in cart" });
       }
-  
+
       await cart.save();
       res.status(200).json({ message: "Item deleted successfully", cart });
     } catch (error) {
@@ -145,7 +143,5 @@ class CartController {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
-  
-  
 }
 module.exports = new CartController();

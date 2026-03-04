@@ -5,7 +5,10 @@ class WishlistController {
     try {
       const wishlists = await Wishlist.find()
         .populate("userId", "firstName lastName email")
-        .populate("products", "name price img brand size color description category");
+        .populate(
+          "products",
+          "name price img brand size color description category",
+        );
       res.status(200).json(wishlists);
     } catch (err) {
       res.status(500).json({ message: "Error", error: err.message });
@@ -21,7 +24,7 @@ class WishlistController {
 
       let wishlist = await Wishlist.findOne({ userId }).populate(
         "products",
-        "name price img brand size color description category"
+        "name price img brand size color description category",
       );
       if (!wishlist) wishlist = { products: [] };
 
@@ -85,7 +88,7 @@ class WishlistController {
       }
 
       wishlist.products = wishlist.products.filter(
-        (p) => p.toString() !== productId
+        (p) => p.toString() !== productId,
       );
       await wishlist.save();
 

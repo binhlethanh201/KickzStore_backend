@@ -15,7 +15,7 @@ function verifyToken(req, res, next) {
       req.token = token;
       return res.status(403).json({ message: "Invalid or expired token" });
     }
-    
+
     req.user = decoded;
     req.token = token;
     next();

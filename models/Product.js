@@ -14,7 +14,7 @@ const ProductSchema = new schema(
     color: [{ type: String, required: true }],
     isFeatured: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Product", ProductSchema, "products");

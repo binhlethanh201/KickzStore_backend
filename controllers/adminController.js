@@ -33,7 +33,7 @@ class AdminController {
         lastName,
         email,
         password: hashedPassword,
-        role: role || 'user'
+        role: role || "user",
       });
       await newUser.save();
       const userResponse = newUser.toObject();
@@ -105,14 +105,14 @@ class AdminController {
       if (!status) {
         return res.status(400).json({ message: "Status is required" });
       }
-      const validStatuses = Order.schema.path('status').enumValues;
+      const validStatuses = Order.schema.path("status").enumValues;
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: `Invalid status: "${status}"` });
       }
       const updatedOrder = await Order.findByIdAndUpdate(
         req.params.id,
         { status: status },
-        { new: true }
+        { new: true },
       );
       if (!updatedOrder)
         return res.status(404).json({ message: "Order not found" });
@@ -161,7 +161,7 @@ class AdminController {
         minOrderValue,
         expiresAt,
         maxUsage,
-        isActive
+        isActive,
       } = req.body;
       let dbDiscountType;
       if (discountType === "Percentage") {
@@ -169,14 +169,22 @@ class AdminController {
       } else if (discountType === "Fixed") {
         dbDiscountType = "amount";
       } else {
-        return res.status(400).json({ message: `Invalid discountType: ${discountType}. Must be 'Percentage' or 'Fixed'.` });
+        return res
+          .status(400)
+          .json({
+            message: `Invalid discountType: ${discountType}. Must be 'Percentage' or 'Fixed'.`,
+          });
       }
       const dbStartDate = new Date();
       let dbEndDate;
       if (expiresAt) {
         dbEndDate = new Date(expiresAt);
         if (isNaN(dbEndDate.getTime())) {
-          return res.status(400).json({ message: "Invalid expiresAt date format. Use YYYY-MM-DD." });
+          return res
+            .status(400)
+            .json({
+              message: "Invalid expiresAt date format. Use YYYY-MM-DD.",
+            });
         }
       } else {
         dbEndDate = new Date(dbStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -193,12 +201,13 @@ class AdminController {
       });
       await newVoucher.save();
       res.status(201).json(newVoucher);
-
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(400).json({ message: "Voucher code must be unique." });
+        return res
+          .status(400)
+          .json({ message: "Voucher code must be unique." });
       }
-      if (error.name === 'ValidationError') {
+      if (error.name === "ValidationError") {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: error.message });
@@ -213,13 +222,21 @@ class AdminController {
         } else if (updateData.discountType === "Fixed") {
           updateData.discountType = "amount";
         } else {
-          return res.status(400).json({ message: `Invalid discountType: ${updateData.discountType}` });
+          return res
+            .status(400)
+            .json({
+              message: `Invalid discountType: ${updateData.discountType}`,
+            });
         }
       }
       if (updateData.expiresAt) {
         const dbEndDate = new Date(updateData.expiresAt);
         if (isNaN(dbEndDate.getTime())) {
-          return res.status(400).json({ message: "Invalid expiresAt date format. Use YYYY-MM-DD." });
+          return res
+            .status(400)
+            .json({
+              message: "Invalid expiresAt date format. Use YYYY-MM-DD.",
+            });
         }
         updateData.endDate = dbEndDate;
         delete updateData.expiresAt;
@@ -230,22 +247,24 @@ class AdminController {
       if (updateData.code) {
         const existing = await Voucher.findOne({
           code: updateData.code,
-          _id: { $ne: req.params.id }
+          _id: { $ne: req.params.id },
         });
         if (existing) {
-          return res.status(400).json({ message: "This voucher code is already in use." });
+          return res
+            .status(400)
+            .json({ message: "This voucher code is already in use." });
         }
       }
       const updatedVoucher = await Voucher.findByIdAndUpdate(
         req.params.id,
         updateData,
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
       if (!updatedVoucher)
         return res.status(404).json({ message: "Voucher not found" });
       res.status(200).json(updatedVoucher);
     } catch (error) {
-      if (error.name === 'ValidationError') {
+      if (error.name === "ValidationError") {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: error.message });
@@ -269,7 +288,7 @@ class AdminController {
       await newProduct.save();
       res.status(201).json(newProduct);
     } catch (error) {
-      if (error.name === 'ValidationError') {
+      if (error.name === "ValidationError") {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: error.message });
@@ -298,13 +317,13 @@ class AdminController {
       const updatedProduct = await Product.findByIdAndUpdate(
         req.params.id,
         req.body,
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
       if (!updatedProduct)
         return res.status(404).json({ message: "Product not found" });
       res.status(200).json(updatedProduct);
     } catch (error) {
-      if (error.name === 'ValidationError') {
+      if (error.name === "ValidationError") {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: error.message });
@@ -330,10 +349,15 @@ class AdminController {
       const totalOrders = await Order.countDocuments();
 
       const revenueResult = await Order.aggregate([
-        { $match: { status: { $in: ["paid", "completed", "shipped", "processing"] } } },
-        { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" } } }
+        {
+          $match: {
+            status: { $in: ["paid", "completed", "shipped", "processing"] },
+          },
+        },
+        { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" } } },
       ]);
-      const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+      const totalRevenue =
+        revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
 
       const pendingOrders = await Order.countDocuments({ status: "pending" });
 
@@ -342,10 +366,15 @@ class AdminController {
         totalProducts,
         totalOrders,
         totalRevenue,
-        pendingOrders
+        pendingOrders,
       });
     } catch (error) {
-      res.status(500).json({ message: "Error fetching dashboard stats", error: error.message });
+      res
+        .status(500)
+        .json({
+          message: "Error fetching dashboard stats",
+          error: error.message,
+        });
     }
   }
   //Order & Revenue Report (Flexible by Month, Quarter, Year)
@@ -360,21 +389,23 @@ class AdminController {
       let matchStage = {
         createdAt: {
           $gte: new Date(`${reportYear}-01-01`),
-          $lte: new Date(`${reportYear}-12-31T23:59:59.999Z`)
+          $lte: new Date(`${reportYear}-12-31T23:59:59.999Z`),
         },
-        status: { $in: ["paid", "completed", "shipped", "processing"] }
+        status: { $in: ["paid", "completed", "shipped", "processing"] },
       };
 
-      if (type === 'month') {
+      if (type === "month") {
         groupBy = { month: { $month: "$createdAt" } };
         sortOrder = { "_id.month": 1 };
-      } else if (type === 'quarter') {
+      } else if (type === "quarter") {
         groupBy = {
-          quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } }
+          quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } },
         };
         sortOrder = { "_id.quarter": 1 };
-      } else if (type === 'year') {
-        matchStage = { status: { $in: ["paid", "completed", "shipped", "processing"] } };
+      } else if (type === "year") {
+        matchStage = {
+          status: { $in: ["paid", "completed", "shipped", "processing"] },
+        };
         groupBy = { year: { $year: "$createdAt" } };
         sortOrder = { "_id.year": 1 };
       } else {
@@ -388,12 +419,12 @@ class AdminController {
           $group: {
             _id: groupBy,
             totalOrders: { $sum: 1 },
-            totalRevenue: { $sum: "$totalPrice" }
-          }
+            totalRevenue: { $sum: "$totalPrice" },
+          },
         },
-        { $sort: sortOrder }
+        { $sort: sortOrder },
       ]);
-      const formattedReport = report.map(item => {
+      const formattedReport = report.map((item) => {
         let label;
         if (item._id.month) label = `Month ${item._id.month}`;
         else if (item._id.quarter) label = `Q${item._id.quarter}`;
@@ -403,13 +434,15 @@ class AdminController {
           label,
           ...item._id,
           totalOrders: item.totalOrders,
-          totalRevenue: item.totalRevenue
+          totalRevenue: item.totalRevenue,
         };
       });
 
       res.status(200).json(formattedReport);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching order report", error: error.message });
+      res
+        .status(500)
+        .json({ message: "Error fetching order report", error: error.message });
     }
   }
   //User Registration Report
@@ -419,24 +452,32 @@ class AdminController {
       const currentYear = new Date().getFullYear();
       const reportYear = year ? parseInt(year) : currentYear;
 
-      let groupBy, matchStage = { createdAt: { $gte: new Date(`${reportYear}-01-01`), $lte: new Date(`${reportYear}-12-31`) } };
+      let groupBy,
+        matchStage = {
+          createdAt: {
+            $gte: new Date(`${reportYear}-01-01`),
+            $lte: new Date(`${reportYear}-12-31`),
+          },
+        };
 
-      if (type === 'year') {
+      if (type === "year") {
         matchStage = {};
         groupBy = { year: { $year: "$createdAt" } };
-      } else if (type === 'quarter') {
-        groupBy = { quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } } };
+      } else if (type === "quarter") {
+        groupBy = {
+          quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } },
+        };
       } else {
         groupBy = { month: { $month: "$createdAt" } };
       }
 
       const report = await User.aggregate([
-        { $match: { role: 'user', ...matchStage } },
+        { $match: { role: "user", ...matchStage } },
         { $group: { _id: groupBy, count: { $sum: 1 } } },
-        { $sort: { "_id": 1 } }
+        { $sort: { _id: 1 } },
       ]);
 
-      const formattedReport = report.map(item => {
+      const formattedReport = report.map((item) => {
         let label;
         if (item._id.month) label = `Month ${item._id.month}`;
         else if (item._id.quarter) label = `Q${item._id.quarter}`;
@@ -446,7 +487,9 @@ class AdminController {
 
       res.status(200).json(formattedReport);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching user report", error: error.message });
+      res
+        .status(500)
+        .json({ message: "Error fetching user report", error: error.message });
     }
   }
   //Top Selling Products Report
@@ -455,14 +498,20 @@ class AdminController {
       const limit = req.query.limit ? parseInt(req.query.limit) : 5;
 
       const topProducts = await Order.aggregate([
-        { $match: { status: { $in: ["paid", "completed", "shipped", "processing"] } } },
+        {
+          $match: {
+            status: { $in: ["paid", "completed", "shipped", "processing"] },
+          },
+        },
         { $unwind: "$items" },
         {
           $group: {
             _id: "$items.productId",
             totalSold: { $sum: "$items.quantity" },
-            totalRevenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
-          }
+            totalRevenue: {
+              $sum: { $multiply: ["$items.price", "$items.quantity"] },
+            },
+          },
         },
         { $sort: { totalSold: -1 } },
         { $limit: limit },
@@ -471,8 +520,8 @@ class AdminController {
             from: "products",
             localField: "_id",
             foreignField: "_id",
-            as: "productInfo"
-          }
+            as: "productInfo",
+          },
         },
         { $unwind: "$productInfo" },
         {
@@ -482,17 +531,21 @@ class AdminController {
             img: "$productInfo.img",
             price: "$productInfo.price",
             totalSold: 1,
-            totalRevenue: 1
-          }
-        }
+            totalRevenue: 1,
+          },
+        },
       ]);
 
       res.status(200).json(topProducts);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching product report", error: error.message });
+      res
+        .status(500)
+        .json({
+          message: "Error fetching product report",
+          error: error.message,
+        });
     }
   }
-
-};
+}
 
 module.exports = new AdminController();
