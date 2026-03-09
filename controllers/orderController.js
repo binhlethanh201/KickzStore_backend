@@ -8,6 +8,24 @@ const moment = require("moment");
 const qs = require("qs");
 const crypto = require("crypto");
 
+function sortObject(obj) {
+  let sorted = {};
+  let str = [];
+  let key;
+  for (key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      str.push(encodeURIComponent(key));
+    }
+  }
+  str.sort();
+  for (key = 0; key < str.length; key++) {
+    sorted[str[key]] = encodeURIComponent(
+      obj[decodeURIComponent(str[key])],
+    ).replace(/%20/g, "+");
+  }
+  return sorted;
+}
+
 class OrderController {
   async getAll(req, res) {
     try {
@@ -65,7 +83,7 @@ class OrderController {
     }
   }
 
-  async createOrder(req, res) {
+  createOrder = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -82,15 +100,13 @@ class OrderController {
       } = req.body;
 
       if (!selectedItems || selectedItems.length === 0) {
-        return res
-          .status(400)
-          .json({ message: "No items selected for checkout" });
+        throw new Error("No items selected for checkout");
       }
 
       const cart = await Cart.findOne({ userId })
         .session(session)
         .populate("items.productId");
-      if (!cart) return res.status(404).json({ message: "Cart not found" });
+      if (!cart) throw new Error("Cart not found");
 
       const orderItems = [];
       let totalPrice = 0;
@@ -116,12 +132,15 @@ class OrderController {
             `Not enough stock for ${product.name}. Only ${product.quantity} left.`,
           );
         }
+
         totalPrice += found.productId.price * found.quantity;
+
         orderItems.push({
           productId: found.productId._id,
           quantity: found.quantity,
           price: found.productId.price,
         });
+
         stockUpdates.push({
           updateOne: {
             filter: { _id: product._id },
@@ -139,16 +158,11 @@ class OrderController {
           endDate: { $gte: new Date() },
         }).session(session);
 
-        if (!voucher)
-          return res
-            .status(400)
-            .json({ message: "Invalid or expired voucher" });
+        if (!voucher) throw new Error("Invalid or expired voucher");
         if (totalPrice < voucher.minOrderValue) {
-          return res
-            .status(400)
-            .json({
-              message: `Order must be at least $${voucher.minOrderValue} to use voucher`,
-            });
+          throw new Error(
+            `Order must be at least $${voucher.minOrderValue} to use voucher`,
+          );
         }
         discount =
           voucher.discountType === "percent"
@@ -164,31 +178,25 @@ class OrderController {
       let paymentCardId = undefined;
 
       if (paymentMethod === "credit_card") {
-        if (!cardId) {
-          throw new Error("Please select a card for payment.");
-        }
-        if (!cvv) {
+        if (!cardId) throw new Error("Please select a card for payment.");
+        if (!cvv)
           throw new Error("Please enter CVV/Password to confirm payment.");
-        }
 
         const card = await Card.findOne({ _id: cardId, userId }).session(
           session,
         );
-        if (!card) {
+        if (!card)
           throw new Error("Card not found or you don't own this card.");
-        }
+        if (card.cvv !== cvv) throw new Error("Invalid CVV/Password.");
 
-        if (card.cvv !== cvv) {
-          throw new Error("Invalid CVV/Password.");
-        }
         const currentBalance = card.balance || 0;
         if (currentBalance < finalPrice) {
           throw new Error(
             `Insufficient funds. Current balance is $${currentBalance.toFixed(2)}.`,
           );
         }
-        card.balance = currentBalance - finalPrice;
 
+        card.balance = currentBalance - finalPrice;
         await card.save({ session });
 
         initialStatus = "paid";
@@ -226,8 +234,23 @@ class OrderController {
       );
       await cart.save({ session });
 
-      await session.commitTransaction();
+      if (paymentMethod === "vnpay") {
+        const vnpayUrl = await this.generateVNPURL(
+          req,
+          newOrder._id.toString(),
+          finalPrice,
+        );
 
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json({
+          message: "Redirect to VNPay",
+          vnpayUrl: vnpayUrl,
+        });
+      }
+
+      await session.commitTransaction();
       res.status(201).json({
         message:
           initialStatus === "paid"
@@ -242,7 +265,8 @@ class OrderController {
         err.message.includes("Not enough stock") ||
         err.message.includes("Insufficient funds") ||
         err.message.includes("CVV") ||
-        err.message.includes("Please select a card")
+        err.message.includes("Please select a card") ||
+        err.message.includes("voucher")
       ) {
         res.status(400).json({ message: err.message });
       } else {
@@ -251,12 +275,15 @@ class OrderController {
     } finally {
       session.endSession();
     }
-  }
+  };
 
   generateVNPURL = async (req, orderId, amount) => {
     let date = new Date();
     let createDate = moment(date).format("YYYYMMDDHHmmss");
-    let ipAddr = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    let ipAddr =
+      req.headers["x-forwarded-for"] ||
+      req.connection.remoteAddress ||
+      "127.0.0.1";
 
     let tmnCode = process.env.VNP_TMN_CODE;
     let secretKey = process.env.VNP_HASH_SECRET;
@@ -277,130 +304,30 @@ class OrderController {
     vnp_Params["vnp_IpAddr"] = ipAddr;
     vnp_Params["vnp_CreateDate"] = createDate;
 
-    vnp_Params = Object.keys(vnp_Params)
-      .sort()
-      .reduce((obj, key) => {
-        obj[key] = vnp_Params[key];
-        return obj;
-      }, {});
+    vnp_Params = sortObject(vnp_Params);
 
     let signData = qs.stringify(vnp_Params, { encode: false });
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
+    let signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
     vnp_Params["vnp_SecureHash"] = signed;
 
     return vnpUrl + "?" + qs.stringify(vnp_Params, { encode: false });
   };
 
-  createOrder = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      const userId = req.user.id;
-      const {
-        selectedItems,
-        shippingMethod,
-        address,
-        paymentMethod,
-        voucherCode,
-      } = req.body;
-
-      if (!selectedItems || selectedItems.length === 0) {
-        throw new Error("No items selected for checkout");
-      }
-
-      const cart = await Cart.findOne({ userId })
-        .session(session)
-        .populate("items.productId");
-      if (!cart) throw new Error("Cart not found");
-
-      const orderItems = [];
-      let subtotal = 0;
-
-      for (const item of selectedItems) {
-        const found = cart.items.find(
-          (ci) => ci.productId._id.toString() === item.productId,
-        );
-        if (!found) throw new Error(`Product not found in cart`);
-
-        const product = await Product.findById(found.productId._id).session(
-          session,
-        );
-        if (product.quantity < found.quantity)
-          throw new Error(`Not enough stock for ${product.name}`);
-
-        subtotal += product.price * found.quantity;
-        orderItems.push({
-          productId: product._id,
-          quantity: found.quantity,
-          price: product.price,
-        });
-      }
-
-      const shippingFee = shippingMethod === "express" ? 5 : 0;
-      const finalPrice = subtotal + shippingFee;
-
-      const newOrder = new Order({
-        userId,
-        items: orderItems,
-        shippingMethod,
-        shippingFee,
-        address,
-        paymentMethod,
-        totalPrice: finalPrice,
-        status: "pending",
-      });
-
-      await newOrder.save({ session });
-
-      if (paymentMethod === "vnpay") {
-        const vnpayUrl = this.generateVNPURL(
-          req,
-          newOrder._id.toString(),
-          finalPrice,
-        );
-
-        await session.commitTransaction();
-        session.endSession();
-
-        return res.status(201).json({
-          message: "Redirect to VNPay",
-          vnpayUrl: vnpayUrl,
-        });
-      }
-
-      await session.commitTransaction();
-      res
-        .status(201)
-        .json({ message: "Order placed successfully", order: newOrder });
-    } catch (err) {
-      await session.abortTransaction();
-      res.status(400).json({ message: err.message });
-    } finally {
-      session.endSession();
-    }
-  };
-
   vnpayReturn = async (req, res) => {
     try {
-      let vnp_Params = req.query;
+      let vnp_Params = { ...req.query };
       let secureHash = vnp_Params["vnp_SecureHash"];
 
       delete vnp_Params["vnp_SecureHash"];
       delete vnp_Params["vnp_SecureHashType"];
 
-      vnp_Params = Object.keys(vnp_Params)
-        .sort()
-        .reduce((obj, key) => {
-          obj[key] = vnp_Params[key];
-          return obj;
-        }, {});
+      vnp_Params = sortObject(vnp_Params);
 
       let secretKey = process.env.VNP_HASH_SECRET;
       let signData = qs.stringify(vnp_Params, { encode: false });
       let hmac = crypto.createHmac("sha512", secretKey);
-      let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
+      let signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
       if (secureHash === signed) {
         const orderId = vnp_Params["vnp_TxnRef"];
@@ -410,13 +337,27 @@ class OrderController {
           await Order.findByIdAndUpdate(orderId, { status: "paid" });
           res.redirect("http://localhost:8081/payment-success");
         } else {
-          await Order.findByIdAndUpdate(orderId, { status: "cancelled" });
+          const order = await Order.findByIdAndUpdate(orderId, {
+            status: "cancelled",
+          });
+          if (order) {
+            const stockUpdates = order.items.map((item) => ({
+              updateOne: {
+                filter: { _id: item.productId },
+                update: { $inc: { quantity: item.quantity } },
+              },
+            }));
+            if (stockUpdates.length > 0) {
+              await Product.bulkWrite(stockUpdates);
+            }
+          }
           res.redirect("http://localhost:8081/payment-failed");
         }
       } else {
         res.status(400).json({ message: "Invalid signature" });
       }
     } catch (err) {
+      console.error("VNPay Return Error:", err);
       res.status(500).json({ message: err.message });
     }
   };
@@ -476,8 +417,6 @@ class OrderController {
         if (card) {
           card.balance += order.totalPrice;
           await card.save({ session });
-        } else {
-          console.warn(`Cannot refund order!`);
         }
       }
 
