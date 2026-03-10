@@ -9,7 +9,7 @@ const morgan = require("morgan");
 
 app.use(
   cors({
-    origin: "http://localhost:8081",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
