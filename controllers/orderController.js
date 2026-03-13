@@ -335,8 +335,40 @@ class OrderController {
 
         if (responseCode === "00") {
           await Order.findByIdAndUpdate(orderId, { status: "paid" });
-          res.redirect("http://localhost:8081/payment-success");
+
+          // Trả về HTML giao diện thành công và tự động gọi Deep Link
+          res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Thanh toán thành công</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px 20px; background-color: #f8f9fa; }
+                    .icon { color: #28a745; font-size: 80px; margin-bottom: 20px; }
+                    h2 { color: #333; margin-bottom: 10px; }
+                    p { color: #6c757d; font-size: 16px; margin-bottom: 30px; line-height: 1.5; }
+                    .btn { display: inline-block; padding: 15px 30px; background-color: #000; color: #fff; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                </style>
+            </head>
+            <body>
+                <div class="icon">✔️</div>
+                <h2>Thanh toán thành công!</h2>
+                <p>Đơn hàng của bạn đã được ghi nhận.<br>Đang tự động quay trở lại ứng dụng...</p>
+                <a href="kickzstore://payment-success" class="btn">Mở lại KickzStore ngay</a>
+                
+                <script>
+                    // Tự động chuyển hướng về App sau 1 giây
+                    setTimeout(function() {
+                        window.location.href = "kickzstore://payment-success";
+                    }, 1000);
+                </script>
+            </body>
+            </html>
+          `);
         } else {
+          // Xử lý hoàn lại kho khi thất bại
           const order = await Order.findByIdAndUpdate(orderId, {
             status: "cancelled",
           });
@@ -351,7 +383,37 @@ class OrderController {
               await Product.bulkWrite(stockUpdates);
             }
           }
-          res.redirect("http://localhost:8081/payment-failed");
+
+          // Trả về HTML giao diện thất bại
+          res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Thanh toán thất bại</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px 20px; background-color: #f8f9fa; }
+                    .icon { color: #dc3545; font-size: 80px; margin-bottom: 20px; }
+                    h2 { color: #333; margin-bottom: 10px; }
+                    p { color: #6c757d; font-size: 16px; margin-bottom: 30px; }
+                    .btn { display: inline-block; padding: 15px 30px; background-color: #000; color: #fff; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; }
+                </style>
+            </head>
+            <body>
+                <div class="icon">❌</div>
+                <h2>Thanh toán thất bại</h2>
+                <p>Giao dịch đã bị hủy hoặc có lỗi xảy ra.<br>Vui lòng thử lại sau.</p>
+                <a href="kickzstore://payment-failed" class="btn">Quay lại ứng dụng</a>
+                
+                <script>
+                    setTimeout(function() {
+                        window.location.href = "kickzstore://payment-failed";
+                    }, 1000);
+                </script>
+            </body>
+            </html>
+          `);
         }
       } else {
         res.status(400).json({ message: "Invalid signature" });
@@ -482,12 +544,10 @@ class OrderController {
       if (err.name === "CastError") {
         return res.status(400).json({ message: "Invalid order ID format" });
       }
-      res
-        .status(500)
-        .json({
-          message: "Server error while deleting order",
-          error: err.message,
-        });
+      res.status(500).json({
+        message: "Server error while deleting order",
+        error: err.message,
+      });
     }
   }
 }
